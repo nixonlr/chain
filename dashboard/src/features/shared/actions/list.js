@@ -3,7 +3,6 @@ import { pageSize } from 'utility/environment'
 import { push, replace } from 'react-router-redux'
 
 export default function(type, options = {}) {
-  const className = options.className || type.charAt(0).toUpperCase() + type.slice(1)
   const listPath  = options.listPath || `/${type}s`
   const clientApi = () => options.clientApi ? options.clientApi() : chainClient()[`${type}s`]
 
@@ -124,19 +123,21 @@ export default function(type, options = {}) {
   }
 
   const deleteItem = (id, confirmMessage, deleteMessage) => {
-    return (dispatch) => {
+    return async (dispatch) => {
       if (!window.confirm(confirmMessage)) {
         return
       }
 
-      clientApi().delete(id)
-        .then(() => dispatch({
+      try {
+        const deletedId = await clientApi().delete(id)
+        dispatch({
           type: `DELETE_${type.toUpperCase()}`,
-          id: id,
+          id: deletedId,
           message: deleteMessage,
-        })).catch(err => dispatch({
-          type: 'ERROR', payload: err
-        }))
+        })
+      } catch(err) {
+        dispatch({ type: 'ERROR', payload: err })
+      }
     }
   }
 

@@ -8,21 +8,19 @@ export default function(type, options = {}) {
     updated,
     submitUpdateForm: (data, id) => {
       const clientApi = options.clientApi ? options.clientApi() : chainClient()[`${type}s`]
-      let promise = Promise.resolve()
 
-      return function(dispatch) {
-        return promise.then(() => clientApi.updateTags({
+      return async function(dispatch) {
+        const resp = await clientApi.updateTags({
           id: id,
           tags: JSON.parse(data.tags),
-        }).then((resp) => {
-          dispatch(updated(resp))
+        })
 
-          dispatch(push({
-            pathname: `/${type}s/${id}`,
-            state: {
-              preserveFlash: true
-            }
-          }))
+        dispatch(updated(resp))
+        dispatch(push({
+          pathname: `/${type}s/${id}`,
+          state: {
+            preserveFlash: true
+          }
         }))
       }
     }
