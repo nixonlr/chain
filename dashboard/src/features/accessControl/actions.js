@@ -143,15 +143,18 @@ export default {
       return
     }
 
-    return dispatch => chainClient().accessTokens.delete(id)
-      .then(() => {
+    return async dispatch => {
+      try {
+        await chainClient().accessTokens.delete(id)
+
         dispatch({
           type: 'DELETE_ACCESS_TOKEN',
           id: grant.id,
           message: 'Token deleted.'
         })
-      }).catch(err => dispatch({
-        type: 'ERROR', payload: err
-      }))
+      } catch(err) {
+        dispatch({ type: 'ERROR', payload: err })
+      }
+    }
   }
 }
