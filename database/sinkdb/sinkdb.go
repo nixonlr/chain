@@ -5,6 +5,7 @@ import (
 	"context"
 	"net/http"
 	"sort"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 
@@ -30,8 +31,26 @@ func Open(laddr, dir string, httpClient *http.Client) (*DB, error) {
 
 // DB provides access to an opened kv store.
 type DB struct {
+	mu     sync.Mutex
+	closed bool
+
 	state *state
 	raft  *raft.Service
+}
+
+// Close closes the database handle releasing its resources. It is
+// the caller's responsibility to ensure that there are no concurrent
+// database operations in flight. Close is idempotent.
+//
+// All other methods have undefined behavior on a closed DB.
+func (db *DB) Close() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	if db.closed { // make Close idempotent
+		return nil
+	}
+	db.closed = true
+	return db.raft.Stop()
 }
 
 // Exec executes the provided operations
